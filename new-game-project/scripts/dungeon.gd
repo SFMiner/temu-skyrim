@@ -116,23 +116,29 @@ func _torch(pos: Vector2) -> void:
 	glow.scale = Vector2(1.2, 1.2)
 	add_child(glow)
 
-# === INTERACTIVE OBJECTS ===
-func _build_chest() -> void:
-	var chest := Node2D.new()
-	chest.position = Vector2(1300, 300)
-	chest.add_to_group("interactable")
+# === HELPER: create interactable object ===
+func _make_interactable(pos: Vector2, obj_name: String, callback: Callable, sprite_asset: String = "chest", radius: float = 24.0) -> Interactable:
+	var obj := Interactable.new()
+	obj.name = obj_name
+	obj.position = pos
+	obj.add_to_group("interactable")
+	obj.on_interact = callback
 	var spr := Sprite2D.new()
-	spr.texture = load("res://assets/props/chest.png")
+	spr.texture = load("res://assets/props/%s.png" % sprite_asset)
 	spr.centered = true
-	chest.add_child(spr)
+	obj.add_child(spr)
 	var col := Area2D.new()
 	var shape := CircleShape2D.new()
-	shape.radius = 24.0
+	shape.radius = radius
 	var col_shape := CollisionShape2D.new()
 	col_shape.shape = shape
 	col.add_child(col_shape)
-	chest.add_child(col)
-	chest.interact = func(_player): _open_chest()
+	obj.add_child(col)
+	return obj
+
+# === INTERACTIVE OBJECTS ===
+func _build_chest() -> void:
+	var chest := _make_interactable(Vector2(1300, 300), "chest", func(_p): _open_chest())
 	add_child(chest)
 
 func _open_chest() -> void:
@@ -146,21 +152,7 @@ func _open_chest() -> void:
 		Game.notify.emit("The chest is already empty.", Color(0.7, 0.7, 0.7))
 
 func _build_word_wall() -> void:
-	var wall := Node2D.new()
-	wall.position = Vector2(400, 150)
-	wall.add_to_group("interactable")
-	var spr := Sprite2D.new()
-	spr.texture = load("res://assets/props/word_wall.png")
-	spr.centered = true
-	wall.add_child(spr)
-	var col := Area2D.new()
-	var shape := CircleShape2D.new()
-	shape.radius = 32.0
-	var col_shape := CollisionShape2D.new()
-	col_shape.shape = shape
-	col.add_child(col_shape)
-	wall.add_child(col)
-	wall.interact = func(_player): _read_word_wall()
+	var wall := _make_interactable(Vector2(400, 150), "word_wall", func(_p): _read_word_wall(), "word_wall", 32.0)
 	add_child(wall)
 
 func _read_word_wall() -> void:
@@ -172,23 +164,10 @@ func _read_word_wall() -> void:
 
 # === EXIT PORTAL ===
 func _build_exit_portal() -> void:
-	var portal := Node2D.new()
-	portal.position = EXIT
-	portal.add_to_group("interactable")
-	var spr := Sprite2D.new()
-	spr.texture = load("res://assets/props/word_wall.png")
-	spr.centered = true
-	spr.modulate = Color(0.3, 0.6, 1.0)
-	spr.scale = Vector2(0.8, 0.8)
-	portal.add_child(spr)
-	var col := Area2D.new()
-	var shape := CircleShape2D.new()
-	shape.radius = 28.0
-	var col_shape := CollisionShape2D.new()
-	col_shape.shape = shape
-	col.add_child(col_shape)
-	portal.add_child(col)
-	portal.interact = func(_player): _exit_dungeon()
+	var portal = _make_interactable(EXIT, "portal", func(_p): _exit_dungeon(), "word_wall", 28.0)
+	var portal_spr = portal.get_child(0)
+	portal_spr.modulate = Color(0.3, 0.6, 1.0)
+	portal_spr.scale = Vector2(0.8, 0.8)
 	add_child(portal)
 
 func _exit_dungeon() -> void:

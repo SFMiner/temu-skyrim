@@ -227,10 +227,11 @@ func _build_lair_decor() -> void:
 func _build_cave_entrance() -> void:
 	var cave_pos := Vector2(2800, 800)
 	_prop("cave", cave_pos)
-	# interactive entrance
-	var entrance := Node2D.new()
+	# interactive entrance (use Interactable class so has_method works)
+	var entrance := Interactable.new()
 	entrance.position = cave_pos + Vector2(0, 40)
 	entrance.add_to_group("interactable")
+	entrance.on_interact = func(_player): _enter_dungeon()
 	var col := Area2D.new()
 	var shape := CircleShape2D.new()
 	shape.radius = 36.0
@@ -238,7 +239,6 @@ func _build_cave_entrance() -> void:
 	col_shape.shape = shape
 	col.add_child(col_shape)
 	entrance.add_child(col)
-	entrance.interact = func(_player): _enter_dungeon()
 	add_child(entrance)
 
 func _enter_dungeon() -> void:

@@ -1,0 +1,48 @@
+{
+  "name": "hero",
+  "frame": 64,
+  "anims": {
+    "walk": {
+      "cols": 9,
+      "rows": 4,
+      "w": 576,
+      "h": 256,
+      "layers": 10
+    },
+    "slash": {
+      "cols": 6,
+      "rows": 4,
+      "w": 384,
+      "h": 256,
+      "layers": 10
+    },
+    "spellcast": {
+      "cols": 7,
+      "rows": 4,
+      "w": 448,
+      "h": 256,
+      "layers": 10
+    },
+    "thrust": {
+      "cols": 8,
+      "rows": 4,
+      "w": 576,
+      "h": 256,
+      "layers": 10
+    },
+    "hurt": {
+      "cols": 6,
+      "rows": 1,
+      "w": 384,
+      "h": 64,
+      "layers": 10
+    },
+    "idle": {
+      "cols": 2,
+      "rows": 4,
+      "w": 128,
+      "h": 256,
+      "layers": 9
+    }
+  }
+}

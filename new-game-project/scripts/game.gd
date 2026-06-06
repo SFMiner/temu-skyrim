@@ -51,6 +51,8 @@ const ITEMS := {
 		"icon": "sword", "rating": 4.5, "desc": "Now 30% more pointy. Battery not included."},
 	"bandit_axe": {"name": "Used Bandit Axe", "type": "weapon", "dmg": 15, "value": 40,
 		"icon": "axe", "rating": 3.1, "desc": "Pre-owned. Slight blood. As-is, no returns."},
+	"draugr_dagger": {"name": "Ancient Draugr Dagger", "type": "weapon", "dmg": 8, "value": 50,
+		"icon": "sword", "rating": 2.8, "desc": "Cursed blade from the tombs. Handle with care (literally)."},
 	"dragonbone_sword": {"name": "DragonBone Sword (LIMITED)", "type": "weapon", "dmg": 34, "value": 400,
 		"icon": "sword", "rating": 5.0, "desc": "Forged from a 1-star seller. Absorbs the spirit of refunds."},
 	"health_potion": {"name": "Healthe Potion", "type": "potion", "heal": 55, "value": 15,

@@ -15,6 +15,14 @@ var player: Player
 var _dragon_spawned: bool = false
 var _in_battle: bool = false
 
+# --- enemy respawn manager ---
+# Skyrim-style: enemies repopulate at their spawn point after a delay, but only
+# while the player is far enough away that they won't pop in on-screen.
+const RESPAWN_DELAY := 20.0       # seconds after death before a slot refills
+const RESPAWN_MIN_DIST := 650.0   # player must be this far from the spawn point
+var _spawns: Array = []           # each: {pos, make:Callable, node, dead_at:float}
+var _respawn_t: float = 0.0
+
 func _ready() -> void:
 	y_sort_enabled = true
 	Game.world = self
@@ -25,6 +33,7 @@ func _ready() -> void:
 	_build_wilderness()
 	_build_bandit_camp()
 	_build_lair_decor()
+	_build_cave_entrance()
 	_build_borders()
 	_spawn_player()
 	Audio.play_music("music_overworld")
@@ -157,11 +166,13 @@ func _build_wilderness() -> void:
 		_spawn_wolf(wp)
 
 func _spawn_wolf(pos: Vector2) -> void:
+	_register_spawn(pos, _make_wolf)
+
+func _make_wolf() -> Node:
 	var w := Wolf.new()
 	w.gold_drop = randi_range(2, 8)
 	w.loot = [{"id": "sweetroll", "chance": 0.15}]
-	w.position = pos
-	add_child(w)
+	return w
 
 # === BANDIT CAMP ===
 func _build_bandit_camp() -> void:
@@ -171,27 +182,38 @@ func _build_bandit_camp() -> void:
 	_prop("sign", CAMP + Vector2(0, -80))
 	for tp in [CAMP + Vector2(-80, -30), CAMP + Vector2(80, -30)]:
 		_prop("torch", tp)
-	var positions := [CAMP + Vector2(-70, 40), CAMP + Vector2(80, 50), CAMP + Vector2(0, 90)]
-	for i in positions.size():
-		var b := HumanoidEnemy.new()
-		b.char_name = "bandit"
-		b.max_hp = 60.0
-		b.damage = 11.0
-		b.xp_reward = 35
-		b.speed = 90.0
-		b.display_name = "Bandit"
-		b.gold_drop = randi_range(8, 20)
-		if i == 0:
-			# the chief carries the stolen sweetroll (for the guard's quest)
-			b.display_name = "Bandit Chief"
-			b.max_hp = 95.0
-			b.damage = 14.0
-			b.xp_reward = 70
-			b.loot = [{"id": "bandit_axe", "chance": 0.8}, {"id": "sweetroll", "chance": 1.0}, {"id": "iron_helmet", "chance": 0.5}]
-		else:
-			b.loot = [{"id": "bandit_axe", "chance": 0.3}]
-		b.position = positions[i]
-		add_child(b)
+	_register_spawn(CAMP + Vector2(-70, 40), _make_bandit_chief)
+	_register_spawn(CAMP + Vector2(80, 50), _make_bandit)
+	_register_spawn(CAMP + Vector2(0, 90), _make_bandit)
+
+func _make_bandit() -> Node:
+	var b := HumanoidEnemy.new()
+	b.char_name = "bandit"
+	b.max_hp = 60.0
+	b.damage = 11.0
+	b.xp_reward = 35
+	b.speed = 90.0
+	b.display_name = "Bandit"
+	b.gold_drop = randi_range(8, 20)
+	b.loot = [{"id": "bandit_axe", "chance": 0.3}]
+	return b
+
+func _make_bandit_chief() -> Node:
+	var b := HumanoidEnemy.new()
+	b.char_name = "bandit"
+	b.display_name = "Bandit Chief"
+	b.max_hp = 95.0
+	b.damage = 14.0
+	b.xp_reward = 70
+	b.speed = 90.0
+	b.gold_drop = randi_range(8, 20)
+	# the chief carries the stolen sweetroll (for the guard's quest) — but only
+	# until that quest is done, so respawned chiefs don't farm infinite sweetrolls
+	if Game.quests.get("sweetroll", 0) >= 3:
+		b.loot = [{"id": "bandit_axe", "chance": 0.8}, {"id": "iron_helmet", "chance": 0.5}]
+	else:
+		b.loot = [{"id": "bandit_axe", "chance": 0.8}, {"id": "sweetroll", "chance": 1.0}, {"id": "iron_helmet", "chance": 0.5}]
+	return b
 
 # === DRAGON LAIR ===
 func _build_lair_decor() -> void:
@@ -200,6 +222,33 @@ func _build_lair_decor() -> void:
 	_prop("boulder", LAIR + Vector2(-180, 0))
 	_prop("boulder", LAIR + Vector2(180, 10))
 	_prop("sign", LAIR + Vector2(0, 160))
+
+# === CAVE ===
+func _build_cave_entrance() -> void:
+	var cave_pos := Vector2(2800, 800)
+	_prop("cave", cave_pos)
+	# interactive entrance
+	var entrance := Node2D.new()
+	entrance.position = cave_pos + Vector2(0, 40)
+	entrance.add_to_group("interactable")
+	var col := Area2D.new()
+	var shape := CircleShape2D.new()
+	shape.radius = 36.0
+	var col_shape := CollisionShape2D.new()
+	col_shape.shape = shape
+	col.add_child(col_shape)
+	entrance.add_child(col)
+	entrance.interact = func(_player): _enter_dungeon()
+	add_child(entrance)
+
+func _enter_dungeon() -> void:
+	if player:
+		var exit_pos: Vector2 = player.global_position
+		Game.notify.emit("Entering dungeon...", Color(0.8, 0.7, 1.0))
+		await get_tree().create_timer(0.3).timeout
+		var main = get_parent()
+		if main and main.has_method("_load_dungeon"):
+			main._load_dungeon(exit_pos)
 
 # === BORDERS ===
 func _build_borders() -> void:
@@ -232,7 +281,36 @@ func _spawn_player() -> void:
 	snow.modulate = Color(1, 1, 1, 0.7)
 	player.add_child(snow)
 
-func _process(_delta: float) -> void:
+# Register an enemy slot that respawns over time. `make` returns a fresh,
+# configured (but unpositioned) enemy node.
+func _register_spawn(pos: Vector2, make: Callable) -> void:
+	var node: Node = make.call()
+	node.position = pos
+	add_child(node)
+	# dead_at == INF means "alive / not yet recorded as dead"
+	_spawns.append({"pos": pos, "make": make, "node": node, "dead_at": INF})
+
+func _update_respawns(delta: float) -> void:
+	_respawn_t -= delta
+	if _respawn_t > 0.0:
+		return
+	_respawn_t = 1.0  # only check once a second
+	var now := float(Time.get_ticks_msec()) / 1000.0
+	for s in _spawns:
+		if is_instance_valid(s.node):
+			continue
+		if s.dead_at == INF:
+			s.dead_at = now  # just noticed it's gone — start the timer
+		elif now - s.dead_at >= RESPAWN_DELAY:
+			if player and player.global_position.distance_to(s.pos) > RESPAWN_MIN_DIST:
+				var n: Node = s.make.call()
+				n.position = s.pos
+				add_child(n)
+				s.node = n
+				s.dead_at = INF
+
+func _process(delta: float) -> void:
+	_update_respawns(delta)
 	# dragon lair trigger: enter the lair with the main quest active
 	if not _dragon_spawned and player and Game.quests.get("main", 0) == 1:
 		if player.global_position.distance_to(LAIR) < 360.0:

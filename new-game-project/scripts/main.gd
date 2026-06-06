@@ -33,7 +33,15 @@ func _ready() -> void:
 	Game.dialogue = _dialogue
 	Game.shop = _menu
 	# Debug convenience: TEMU_AUTOSTART=1 boots straight into the overworld.
-	if OS.has_environment("TEMU_SHOT"):
+	if OS.has_environment("TEMU_RESPAWN"):
+		Game._reset_run()
+		_start_overworld()
+		_respawn_test_routine()
+	elif OS.has_environment("TEMU_TEST"):
+		Game._reset_run()
+		_start_overworld()
+		_test_routine()
+	elif OS.has_environment("TEMU_SHOT"):
 		Game._reset_run()
 		_start_overworld()
 		_shot_routine()
@@ -42,6 +50,66 @@ func _ready() -> void:
 		_start_overworld()
 	else:
 		_show_title()
+
+# Debug: kill every enemy, backdate their death, move the player to an empty
+# corner, and confirm all spawn slots refill (regression test for respawning).
+func _respawn_test_routine() -> void:
+	await get_tree().create_timer(0.8).timeout
+	var ow = _world
+	var initial: int = ow._spawns.size()
+	ow.player.global_position = Vector2(100, 100)
+	for s in ow._spawns:
+		if is_instance_valid(s.node):
+			s.node.queue_free()
+		s.dead_at = -100.0  # pretend it died long ago (well past RESPAWN_DELAY)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var dead_now := 0
+	for s in ow._spawns:
+		if not is_instance_valid(s.node):
+			dead_now += 1
+	ow._respawn_t = 0.0
+	await get_tree().create_timer(1.5).timeout
+	var alive := 0
+	for s in ow._spawns:
+		if is_instance_valid(s.node):
+			alive += 1
+	print("RESPAWN TEST: slots=%d, killed=%d, refilled_alive=%d" % [initial, dead_now, alive])
+	get_tree().quit()
+
+# Debug: simulate walking up to a villager and pressing E, to verify the
+# single-line dialogue opens AND stays open (regression test for the input bug).
+func _test_routine() -> void:
+	await get_tree().create_timer(1.0).timeout
+	var v: Node = null
+	for n in get_tree().get_nodes_in_group("npc"):
+		if n.npc_name in ["Sigrid", "Ysolda"]:
+			v = n; break
+	if v == null:
+		print("TEST: no villager found"); get_tree().quit(); return
+	v.can_wander = false
+	_world.player.global_position = v.global_position + Vector2(22, 0)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	_press("interact")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	print("TEST after 1st E -> ui_open=%s dialogue_active=%s text='%s'" % [Game.ui_open, _dialogue.is_active(), _dialogue._text_label.text])
+	_release("interact")
+	await get_tree().process_frame
+	_press("interact")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	print("TEST after 2nd E -> ui_open=%s dialogue_active=%s (expect closed)" % [Game.ui_open, _dialogue.is_active()])
+	get_tree().quit()
+
+func _press(action: String) -> void:
+	var e := InputEventAction.new(); e.action = action; e.pressed = true
+	Input.parse_input_event(e)
+
+func _release(action: String) -> void:
+	var e := InputEventAction.new(); e.action = action; e.pressed = false
+	Input.parse_input_event(e)
 
 # Debug: render a few screenshots then quit (run with a real renderer).
 func _shot_routine() -> void:
@@ -223,6 +291,18 @@ func _start_overworld() -> void:
 	add_child(_world)
 	_hud.visible = true
 	Game.ui_open = false
+
+func _load_dungeon(exit_pos: Vector2) -> void:
+	if _world and is_instance_valid(_world):
+		_world.queue_free()
+	_world = Node2D.new()
+	_world.set_script(load("res://scripts/dungeon.gd"))
+	add_child(_world)
+	_world.set_meta("overworld_exit_pos", exit_pos)
+	Game.ui_open = false
+
+func _load_overworld_from_dungeon() -> void:
+	_start_overworld()
 
 # === GLOBAL INPUT: save / load / pause / intro ===
 func _unhandled_input(event: InputEvent) -> void:

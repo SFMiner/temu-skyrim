@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://jmxe1f376bp6"
-valid=false
+uid="uid://d1la67d7ab8nd"
+path="res://.godot/imported/cave.png-929826eb2ed70969a10b0274c9557b44.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
-source_file="res://assets/items/sweetroll.png"
+source_file="res://assets/props/cave.png"
+dest_files=["res://.godot/imported/cave.png-929826eb2ed70969a10b0274c9557b44.ctex"]
 
 [params]
 

@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://jmxe1f376bp6"
-valid=false
+uid="uid://s4wld5hmp0r5"
+path="res://.godot/imported/word_wall.png-9279a01030fa5a34a66187b6936db6b9.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
-source_file="res://assets/items/sweetroll.png"
+source_file="res://assets/props/word_wall.png"
+dest_files=["res://.godot/imported/word_wall.png-9279a01030fa5a34a66187b6936db6b9.ctex"]
 
 [params]
 

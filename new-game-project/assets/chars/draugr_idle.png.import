@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://jmxe1f376bp6"
-valid=false
+uid="uid://b6dypgyvbreyj"
+path="res://.godot/imported/draugr_idle.png-90a757448dc5499c649f37b1e90a41d3.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
-source_file="res://assets/items/sweetroll.png"
+source_file="res://assets/chars/draugr_idle.png"
+dest_files=["res://.godot/imported/draugr_idle.png-90a757448dc5499c649f37b1e90a41d3.ctex"]
 
 [params]
 

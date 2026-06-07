@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://jmxe1f376bp6"
-valid=false
+uid="uid://p1ldrl6rue41"
+path="res://.godot/imported/glow.png-cbd09004ec76a979572dca6d1ed54e96.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
-source_file="res://assets/items/sweetroll.png"
+source_file="res://assets/fx/glow.png"
+dest_files=["res://.godot/imported/glow.png-cbd09004ec76a979572dca6d1ed54e96.ctex"]
 
 [params]
 

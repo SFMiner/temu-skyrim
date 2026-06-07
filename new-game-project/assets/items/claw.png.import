@@ -3,15 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bk381i38gb0xc"
-path="res://.godot/imported/claw.png-f83cb0ce7d3adb7cd5ddc6043e58fbfc.ctex"
-metadata={
-"vram_texture": false
-}
+valid=false
 
 [deps]
 
 source_file="res://assets/items/claw.png"
-dest_files=["res://.godot/imported/claw.png-f83cb0ce7d3adb7cd5ddc6043e58fbfc.ctex"]
 
 [params]
 

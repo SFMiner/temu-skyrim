@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://jmxe1f376bp6"
-valid=false
+uid="uid://xd48h62ma0k3"
+path="res://.godot/imported/draugr_slash.png-fe402475720402b8309ce25111abce3c.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
-source_file="res://assets/items/sweetroll.png"
+source_file="res://assets/chars/draugr_slash.png"
+dest_files=["res://.godot/imported/draugr_slash.png-fe402475720402b8309ce25111abce3c.ctex"]
 
 [params]
 

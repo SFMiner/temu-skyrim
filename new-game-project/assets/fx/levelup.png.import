@@ -3,15 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c1c3jkkwb2gqd"
-path="res://.godot/imported/levelup.png-52cc94012001849d0e2219c62c7b421d.ctex"
-metadata={
-"vram_texture": false
-}
+valid=false
 
 [deps]
 
 source_file="res://assets/fx/levelup.png"
-dest_files=["res://.godot/imported/levelup.png-52cc94012001849d0e2219c62c7b421d.ctex"]
 
 [params]
 

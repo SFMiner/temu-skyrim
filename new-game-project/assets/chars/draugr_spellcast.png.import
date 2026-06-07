@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://jmxe1f376bp6"
-valid=false
+uid="uid://bqw2m8i1ofa5h"
+path="res://.godot/imported/draugr_spellcast.png-89be071091945f3dd1af4ade43f02183.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
-source_file="res://assets/items/sweetroll.png"
+source_file="res://assets/chars/draugr_spellcast.png"
+dest_files=["res://.godot/imported/draugr_spellcast.png-89be071091945f3dd1af4ade43f02183.ctex"]
 
 [params]
 

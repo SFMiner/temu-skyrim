@@ -1,0 +1,20 @@
+ERROR: Error opening file 'C:/Users/seanm/OneDrive/Documents/Other/LearningRPG_Week1/icon.svg'.
+   at: load_image (core/io/image_loader.cpp:89)
+ERROR: Error opening file 'C:/Users/Seanm/Nextcloud2/Gamedev/GodotGames/learning_rpg_week2/icon.svg'.
+   at: load_image (core/io/image_loader.cpp:89)
+ERROR: Error opening file 'C:/Users/seanm/Nextcloud2/Gamedev/GodotGames/learning-rpg-system/icon.svg'.
+   at: load_image (core/io/image_loader.cpp:89)
+ERROR: Error opening file 'C:/Users/Seanm/Nextcloud2/Gamedev/GodotGames/learning-rpg-system/icon.svg'.
+   at: load_image (core/io/image_loader.cpp:89)
+ERROR: Error opening file 'C:/Users/seanm/OneDrive/Documents/Other/studenttrackernew/C_SHARP_PORT/icon.svg'.
+   at: load_image (core/io/image_loader.cpp:89)
+ERROR: Error opening file 'C:/Users/seanm/OneDrive/Documents/Other/participation-tracker/icon.png'.
+   at: load_image (core/io/image_loader.cpp:89)
+ERROR: Error opening file 'C:/Users/seanm/OneDrive/Documents/Other/Work/2023-24/MultiplicationTemplate/icon.png'.
+   at: load_image (core/io/image_loader.cpp:89)
+ERROR: Error opening file 'C:/Users/seanm/OneDrive/Documents/Other/My Drive/Robot/Platformer Test/icon.png'.
+   at: load_image (core/io/image_loader.cpp:89)
+ERROR: Error opening file 'C:/Users/seanm/OneDrive/Documents/Other/My Drive/Testing/KinematicTestDesktop/icon.png'.
+   at: load_image (core/io/image_loader.cpp:89)
+ERROR: Error opening file 'C:/Users/seanm/OneDrive/Documents/Other/My Drive/Testing/KinematicTest/icon.png'.
+   at: load_image (core/io/image_loader.cpp:89)

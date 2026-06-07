@@ -131,8 +131,10 @@ func _build_town() -> void:
 	_spawn_npc("jarl", "Jarl BalgReuf", KEEP_POS + Vector2(0, 130), _talk_jarl, false)
 	_spawn_npc("guard", "Beigeton Guard", TOWN + Vector2(-40, 150), _talk_guard, true)
 	_spawn_npc("shopkeep", "Belethor (Reseller)", TOWN + Vector2(90, 30), _talk_shopkeep, false)
-	_spawn_npc("villager", "Sigrid", TOWN + Vector2(-160, 120), _talk_villager, true)
-	_spawn_npc("villager", "Ysolda", TOWN + Vector2(260, 130), _talk_villager, true)
+	_spawn_npc("sigrid", "Sigrid", TOWN + Vector2(-160, 120), _talk_villager, true)
+	_spawn_npc("ysolda", "Ysolda", TOWN + Vector2(260, 130), _talk_villager, true)
+	_spawn_npc("mage", "Farengar Secret-Fire", KEEP_POS + Vector2(-80, 160), _talk_farengar, false)
+	_spawn_npc("camilla", "Camilla", TOWN + Vector2(150, 160), _talk_camilla, true)
 
 func _spawn_npc(char_name: String, npc_name: String, pos: Vector2, cb: Callable, wander: bool) -> void:
 	var n := Npc.new()
@@ -415,3 +417,49 @@ func _talk_villager(npc) -> void:
 		["Careful north — DraGON™ has a 47% return rate, mostly of arrows."],
 	]
 	Game.dialogue.start(npc.npc_name, lines[randi() % lines.size()])
+
+func _talk_farengar(_npc) -> void:
+	var stage: int = Game.quests.get("golden_claw", 0)
+	if stage == 0:
+		Game.dialogue.start("Farengar Secret-Fire", [
+			"Hm? I am Farengar Secret-Fire, court wizard. Do not touch the alembics, they're financed.",
+			"The Jarl wants me to research the dragons. Naturally, I outsourced it.",
+			"There is a [i]Golden Dragon Claw[/i] in the old barrow to the south — an ancient 5-star unlock device.",
+			"A thief already 'expedited' it for us, then never delivered. Last tracking ping: deep in the tomb.",
+			"Fetch it. I'll make it worth your while — gold, and a glowing seller rating.",
+		], [
+			{"text": "I'll retrieve the claw. (Accept)", "action": func(): _accept_golden_claw()},
+			{"text": "Sounds like YOUR job.", "action": func(): Game.dialogue.start("Farengar Secret-Fire", ["I have a fragile constitution and a no-refunds policy on adventuring.", "The barrow is south. Mind the webbing."], [{"text": "Fine, I'll go.", "action": func(): _accept_golden_claw()}])},
+		])
+	elif stage < 3:
+		if Game.count_of("dragon_claw") > 0:
+			Game.dialogue.start("Farengar Secret-Fire", [
+				"You have it! The Golden Dragon Claw — authentic, barely chewed.",
+				"Marvelous. The solution's engraved right on the palm. Of course it is.",
+				"Here is your payment. Cleared instantly, no 14-day hold.",
+			], [{"text": "(Hand over the claw)", "action": func(): _complete_golden_claw()}])
+		else:
+			Game.dialogue.start("Farengar Secret-Fire", ["Still no claw? The barrow is SOUTH. Past the draugr, past the spiders, past the regret."])
+	else:
+		Game.dialogue.start("Farengar Secret-Fire", ["The claw performs as described. Five stars. Would be enchanted-by again."])
+
+func _accept_golden_claw() -> void:
+	Game.set_quest("golden_claw", 1)
+	Game.notify.emit("Quest started: The Golden Claw. Head south to the barrow!", Color(1, 0.85, 0.4))
+
+func _complete_golden_claw() -> void:
+	Game.remove_item("dragon_claw", 1)
+	Game.add_gold(200)
+	Game.skill_up("speech", 3)
+	Game.set_quest("golden_claw", 3)
+	Game.notify.emit("Quest complete: The Golden Claw (+200 G)", Color(0.8, 1, 0.8))
+
+func _talk_camilla(npc) -> void:
+	if Game.quests.get("golden_claw", 0) == 0:
+		Game.dialogue.start(npc.npc_name, [
+			"My brother and I run the trading post. Well, we DID, until the claw got 'borrowed'.",
+			"Some smooth-talker named Arvel swiped our golden claw and bolted into the south barrow.",
+			"Go see Farengar at the keep — that wizard's been desperate to get it back.",
+		])
+	else:
+		Game.dialogue.start(npc.npc_name, ["Arvel ran into the barrow with our claw. I hope a spider got him. ...Is that harsh?"])

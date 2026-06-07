@@ -32,7 +32,7 @@ var equipped_weapon: String = "iron_sword"
 
 # === QUESTS / FLAGS ===
 # stage values: 0=unknown, 1=active, 2=ready-to-turn-in, 3=complete
-var quests: Dictionary = {"main": 0, "sweetroll": 0, "freetrial": 0}
+var quests: Dictionary = {"main": 0, "sweetroll": 0, "freetrial": 0, "golden_claw": 0}
 var flags: Dictionary = {}
 var dragons_slain: int = 0
 
@@ -83,7 +83,7 @@ func _reset_run() -> void:
 	known_shout = false
 	inventory = []
 	equipped_weapon = "iron_sword"
-	quests = {"main": 0, "sweetroll": 0, "freetrial": 0}
+	quests = {"main": 0, "sweetroll": 0, "freetrial": 0, "golden_claw": 0}
 	flags = {}
 	dragons_slain = 0
 	add_item("iron_sword", 1)

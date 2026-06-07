@@ -200,6 +200,13 @@ func _refresh_quests() -> void:
 		lines += "• The Sweetroll Heist: recover the stolen sweetroll\n"
 	elif q.get("sweetroll", 0) == 3:
 		lines += "• [color=#88dd88]The Sweetroll Heist — COMPLETE[/color]\n"
+	if q.get("golden_claw", 0) == 1:
+		if Game.count_of("dragon_claw") > 0:
+			lines += "• The Golden Claw: return the claw to Farengar\n"
+		else:
+			lines += "• The Golden Claw: recover it from the south barrow\n"
+	elif q.get("golden_claw", 0) == 3:
+		lines += "• [color=#88dd88]The Golden Claw — COMPLETE[/color]\n"
 	if q.get("freetrial", 0) == 1:
 		lines += "• Free Trial: bring the merchant 3 wolf pelts\n"
 	if lines.strip_edges().ends_with("Quests[/b]"):

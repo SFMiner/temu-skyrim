@@ -27,6 +27,8 @@ func _ready() -> void:
 	_build_word_wall()
 	_build_exit_portal()
 	_spawn_draugr()
+	_spawn_spiders()
+	_spawn_lair()
 	_spawn_player()
 	Audio.stop_music()
 	Audio.play_ambient("ambient_dungeon")
@@ -239,6 +241,84 @@ func _update_respawns(delta: float) -> void:
 				add_child(n)
 				s.node = n
 				s.dead_at = INF
+
+# === FROST SPIDER SPAWNING ===
+# Frostbite spiders share the tomb with the draugr. They respawn like the others;
+# stats live in Spider._build_visual, so here we only set drops.
+func _spawn_spiders() -> void:
+	for pos in [Vector2(300, 600), Vector2(1100, 700), Vector2(500, 400), Vector2(1300, 800)]:
+		_register_spawn(pos, _make_spider)
+
+func _make_spider() -> Node:
+	var s := Spider.new()
+	s.gold_drop = randi_range(5, 12)
+	s.loot = [{"id": "health_potion", "chance": 0.3}]
+	return s
+
+# === GIANT SPIDER LAIR ===
+# Deep in the tomb: Arvel the Swift, webbed up by the boss, plus the Giant
+# Frostbite Spider™ that drops the Golden Dragon Claw. The boss is a one-shot
+# spawn (gated by a flag) so it can't be farmed on repeat dungeon visits.
+const LAIR := Vector2(650, 520)
+
+func _spawn_lair() -> void:
+	# Webbing chokes the whole chamber — evidence of the nest. Each web is a
+	# distinct static frame (the sheet's frames sway, so animating them scrolls
+	# sideways); a gentle alpha pulse gives an in-place glimmer instead.
+	var webs := [
+		{"p": LAIR + Vector2(-140, -30), "s": 2.6, "f": 0}, {"p": LAIR + Vector2(150, -10), "s": 2.2, "f": 3},
+		{"p": LAIR + Vector2(-70, 90), "s": 2.0, "f": 5}, {"p": LAIR + Vector2(90, 110), "s": 2.4, "f": 1},
+		{"p": LAIR + Vector2(10, -90), "s": 3.0, "f": 6}, {"p": LAIR + Vector2(-120, 60), "s": 1.8, "f": 2},
+	]
+	for w in webs:
+		_web(w.p, w.s, w.f)
+
+	# Arvel — the thief who stole the claw and got webbed for his trouble.
+	var arvel := Npc.new()
+	arvel.char_name = "bandit"
+	arvel.npc_name = "Arvel the Swift"
+	arvel.can_wander = false
+	arvel.on_interact = _talk_arvel
+	arvel.position = LAIR + Vector2(-90, 30)
+	add_child(arvel)
+
+	if not Game.flags.get("giant_spider_slain", false):
+		var boss := GiantSpider.new()
+		boss.position = LAIR
+		add_child(boss)
+		Game.notify.emit("Webbing chokes the passage ahead. Something big nests here.", Color(0.7, 0.85, 1.0))
+
+# One static web frame from props/SpiderWeb-Sheet.png (480x32 -> 8x 60x32),
+# with a slow alpha pulse so it glimmers in place without scrolling sideways.
+func _web(pos: Vector2, scale: float, frame: int) -> void:
+	var at := AtlasTexture.new()
+	at.atlas = load("res://assets/props/SpiderWeb-Sheet.png")
+	at.region = Rect2(frame * 60, 0, 60, 32)
+	var web := Sprite2D.new()
+	web.texture = at
+	web.position = pos
+	web.scale = Vector2(scale, scale)
+	web.z_index = -85
+	web.modulate = Color(0.85, 0.92, 1.0, 0.55)
+	add_child(web)
+	# desynced shimmer — vary duration so the webs don't pulse in lockstep
+	var tw := web.create_tween().set_loops()
+	var dur := randf_range(1.1, 1.8)
+	tw.tween_property(web, "modulate:a", 0.82, dur).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(web, "modulate:a", 0.5, dur).set_trans(Tween.TRANS_SINE)
+
+func _talk_arvel(_npc) -> void:
+	if not Game.flags.get("giant_spider_slain", false):
+		Game.dialogue.start("Arvel the Swift", [
+			"You! Cut me down, I'm STUCK in this webbing! Two-day shipping my eye!",
+			"I nicked the golden claw fair and square — then the big spider left a 1-star review on ME.",
+			"Kill it and the claw's yours. I just want OUT of this gift-wrapping.",
+		])
+	else:
+		Game.dialogue.start("Arvel the Swift", [
+			"You squished it! Take the claw, take it — I'm never thieving artifacts again.",
+			"...Probably. The resale value is just SO good.",
+		])
 
 func _process(delta: float) -> void:
 	_update_respawns(delta)

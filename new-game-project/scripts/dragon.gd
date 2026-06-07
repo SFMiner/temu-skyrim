@@ -150,7 +150,7 @@ func _die() -> void:
 	Game.add_xp(220)
 	Game.add_gold(120)
 	Game.add_item("dragonbone_sword", 1)
-	Game.add_item("dragon_claw", 1)
+	Game.add_item("ancient_tome", 1)
 	get_tree().create_timer(1.4).timeout.connect(_finish_death)
 	# fade the corpse
 	var t2 := create_tween()

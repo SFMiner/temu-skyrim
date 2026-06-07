@@ -113,7 +113,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("shout"):
 		_shout()
 	elif event.is_action_pressed("interact"):
-		_interact()
+		# Consume the press if we open something, so the dialogue box (which also
+		# listens for "interact" to advance) doesn't immediately skip/close it.
+		if _interact():
+			get_viewport().set_input_as_handled()
 
 # === COMBAT ===
 func _attack() -> void:
@@ -235,9 +238,10 @@ func _respawn() -> void:
 	_play("idle")
 
 # === INTERACTION ===
-func _interact() -> void:
+# Returns true if an NPC/interactable was engaged.
+func _interact() -> bool:
 	var nearest: Node2D = null
-	var best := 64.0
+	var best := 72.0  # match the NPC's "[E] Talk" prompt range
 	for g in ["npc", "interactable"]:
 		for n in get_tree().get_nodes_in_group(g):
 			if n is Node2D and n.has_method("interact"):
@@ -247,6 +251,8 @@ func _interact() -> void:
 					nearest = n
 	if nearest:
 		nearest.interact(self)
+		return true
+	return false
 
 # === HELPERS ===
 func _regenerate(delta: float) -> void:

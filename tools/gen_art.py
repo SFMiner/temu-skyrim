@@ -271,6 +271,60 @@ def dungeon_wall():
 			d.rectangle([x+1,gy+1,x+18,gy+2],fill=P["stone"]+(255,))
 	save(im,"env","tile_dwall")
 
+def cave():
+	# a rocky hill with a dark archway entrance, snow on top
+	w,h=140,120; im=newimg(w,h); d=ImageDraw.Draw(im)
+	d.ellipse([8,h-18,w-8,h-2],fill=(0,0,0,70))
+	d.polygon([(4,h-8),(20,30),(w//2,8),(w-20,30),(w-4,h-8)],fill=P["stone"]+(255,))
+	d.polygon([(4,h-8),(20,30),(w//2,8)],fill=P["stone_hi"]+(255,))
+	d.polygon([(w//2,8),(w-20,30),(w-4,h-8)],fill=P["stone_d"]+(255,))
+	# snow cap
+	d.polygon([(20,30),(w//2,8),(w-20,30),(w-34,40),(34,40)],fill=P["snow"]+(230,))
+	d.polygon([(34,40),(w//2,18),(w-34,40)],fill=P["snow_hi"]+(220,))
+	# dark mouth
+	d.pieslice([w//2-34,h-78,w//2+34,h-2],180,360,fill=(8,8,12,255))
+	d.rectangle([w//2-34,h-40,w//2+34,h-8],fill=(8,8,12,255))
+	speckle(d,w//2-30,h-60,w//2+30,h-14,(20,20,28),40)
+	save(im,"props","cave")
+
+def word_wall():
+	# tall curved carved stone wall with glowing runes
+	w,h=160,130; im=newimg(w,h); d=ImageDraw.Draw(im)
+	d.ellipse([6,h-16,w-6,h-2],fill=(0,0,0,70))
+	d.arc([6,4,w-6,h+40],180,360,fill=P["stone"],width=44)
+	d.arc([6,4,w-6,h+40],180,360,fill=P["stone_d"],width=4)
+	# carved band of glowing runes
+	runes=["ᚠ","ᚢ","ᚦ","ᚱ","ᚷ","ᚹ","ᚺ"]
+	try: f=ImageFont.truetype("seguisym.ttf",18)
+	except Exception:
+		try: f=ImageFont.truetype("arial.ttf",18)
+		except Exception: f=ImageFont.load_default()
+	for i in range(7):
+		ang=math.radians(200+i*20)
+		cx=w//2+int((w//2-30)*math.cos(ang)); cy=(h-10)+int((h-20)*math.sin(ang)*0.5)
+		d.text((cx-6,cy-30),runes[i],fill=(120,220,255,255),font=f)
+	save(im,"props","word_wall")
+
+def glow():
+	# soft warm radial halo for torches (drawn with additive blend in-engine)
+	s=128; im=newimg(s,s); d=ImageDraw.Draw(im)
+	for r in range(s//2,0,-1):
+		a=int(120*(1-r/(s/2))**2)
+		d.ellipse([s//2-r,s//2-r,s//2+r,s//2+r],fill=(255,170,80,a))
+	save(im,"fx","glow")
+
+def vignette():
+	# screen-space dark vignette overlay (transparent center -> dark edges)
+	w,he=1280,720; im=newimg(w,he); px=im.load()
+	cx,cy=w/2,he/2; maxd=math.hypot(cx,cy)
+	for y in range(he):
+		for x in range(0,w,2):
+			t=(math.hypot(x-cx,y-cy)/maxd)
+			a=int(235*max(0,(t-0.45))/0.55) if t>0.45 else 0
+			px[x,y]=(0,0,6,min(a,235))
+			if x+1<w: px[x+1,y]=(0,0,6,min(a,235))
+	save(im,"ui","vignette")
+
 # ── Enemies (non-LPC) ────────────────────────────────────────────────────────
 def wolf():
 	# top-down-ish wolf facing right; 2 frames
@@ -481,6 +535,7 @@ def star():
 
 def main():
 	tile_snow(); tile_snow_rock(); tile_path(); tile_ice(); tile_stonefloor(); tile_wood(); dungeon_wall()
+	cave(); word_wall(); glow(); vignette()
 	pine(True); pine(False); rock("rock"); rock("boulder",72,60); shrub(); signpost(); torch(); campfire()
 	barrel(); chest(False); chest(True); house(False); house(True); keep(); stall(); banner(); gravestone()
 	wolf(); dragon(); dragon_soul()

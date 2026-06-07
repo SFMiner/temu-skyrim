@@ -1,0 +1,16 @@
+# --- Godot engine binary & archive (don't commit; download separately) ---
+Godot_v4.6-stable_win64.exe
+*.zip
+
+# --- Godot editor cache / imported assets (regenerated on open) ---
+new-game-project/.godot/
+.godot/
+
+# --- Debug / throwaway artifacts ---
+tools/*contact*.png
+shot*.png
+new-game-project/shot*.png
+
+# --- OS / misc ---
+Thumbs.db
+.DS_Store

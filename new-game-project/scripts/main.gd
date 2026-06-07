@@ -33,7 +33,11 @@ func _ready() -> void:
 	Game.dialogue = _dialogue
 	Game.shop = _menu
 	# Debug convenience: TEMU_AUTOSTART=1 boots straight into the overworld.
-	if OS.has_environment("TEMU_RESPAWN"):
+	if OS.has_environment("TEMU_DUNGEON_TEST"):
+		Game._reset_run()
+		_start_overworld()
+		_dungeon_test_routine()
+	elif OS.has_environment("TEMU_RESPAWN"):
 		Game._reset_run()
 		_start_overworld()
 		_respawn_test_routine()
@@ -102,6 +106,122 @@ func _test_routine() -> void:
 	await get_tree().process_frame
 	print("TEST after 2nd E -> ui_open=%s dialogue_active=%s (expect closed)" % [Game.ui_open, _dialogue.is_active()])
 	get_tree().quit()
+
+# Debug: test the dungeon flow - enter cave, spawn in dungeon, check draugr exist, exit
+func _dungeon_test_routine() -> void:
+	var results := []
+	results.append("=== DUNGEON TEST START ===")
+
+	await get_tree().create_timer(0.8).timeout
+	var ow = _world
+	var player = ow.player
+	if not player:
+		results.append("FAIL: no player in overworld")
+		_write_test_results(results)
+		get_tree().quit()
+		return
+
+	# Move player to cave entrance
+	var cave_pos := Vector2(2800, 800)
+	player.global_position = cave_pos + Vector2(0, 40)
+	await get_tree().physics_frame
+
+	# Find cave entrance in interactable group
+	var cave_entrance = null
+	for n in get_tree().get_nodes_in_group("interactable"):
+		if n is Interactable and n.global_position.distance_to(cave_pos + Vector2(0, 40)) < 5.0:
+			cave_entrance = n
+			break
+
+	if cave_entrance == null:
+		results.append("FAIL: cave entrance not found")
+		_write_test_results(results)
+		get_tree().quit()
+		return
+
+	results.append("✓ Cave entrance found")
+	cave_entrance.interact(player)
+	await get_tree().create_timer(0.5).timeout
+
+	# Check if we transitioned to dungeon
+	var dungeon = _world
+	var dungeon_player = dungeon.player if dungeon else null
+	if dungeon_player == null:
+		results.append("FAIL: player not in dungeon")
+		_write_test_results(results)
+		get_tree().quit()
+		return
+
+	results.append("✓ Entered dungeon, player at %s" % dungeon_player.global_position)
+
+	# Check if draugr enemies exist
+	var draugr_count = 0
+	for n in get_tree().get_nodes_in_group("enemies"):
+		if n.display_name and n.display_name == "Draugr":
+			draugr_count += 1
+
+	results.append("✓ Found %d draugr enemies" % draugr_count)
+	if draugr_count == 0:
+		results.append("WARN: Expected at least 1 draugr")
+
+	# Check for interactive objects
+	var interactables = get_tree().get_nodes_in_group("interactable")
+	var chest_count = 0
+	var portal_count = 0
+	for n in interactables:
+		if n is Interactable:
+			var dist_to_chest = n.global_position.distance_to(Vector2(1300, 300))
+			var dist_to_portal = n.global_position.distance_to(Vector2(800, 100))
+			if dist_to_chest < 10:
+				chest_count += 1
+			if dist_to_portal < 10:
+				portal_count += 1
+
+	results.append("✓ Found %d chest, %d exit portal" % [chest_count, portal_count])
+
+	# Find and interact with exit portal
+	var exit_portal = null
+	for n in interactables:
+		if n is Interactable and n.global_position.distance_to(Vector2(800, 100)) < 10:
+			exit_portal = n
+			break
+
+	if exit_portal == null:
+		results.append("FAIL: exit portal not found")
+		_write_test_results(results)
+		get_tree().quit()
+		return
+
+	results.append("✓ Exit portal found, exiting dungeon...")
+	exit_portal.interact(dungeon_player)
+	await get_tree().create_timer(0.5).timeout
+
+	# Check if we returned to overworld
+	var new_overworld = _world
+	var new_overworld_player = new_overworld.player if new_overworld else null
+	if new_overworld_player == null:
+		results.append("FAIL: player not back in overworld")
+		_write_test_results(results)
+		get_tree().quit()
+		return
+
+	results.append("✓ Returned to overworld, player at %s" % new_overworld_player.global_position)
+	results.append("=== DUNGEON TEST PASSED ===")
+	_write_test_results(results)
+	get_tree().quit()
+
+func _write_test_results(results: Array) -> void:
+	var output = "\n".join(results)
+	# Print all results to console
+	for line in results:
+		print(line)
+	# Try multiple paths
+	for path in ["res://dungeon_test_results.txt", "user://dungeon_test_results.txt"]:
+		var file = FileAccess.open(path, FileAccess.WRITE)
+		if file:
+			file.store_string(output)
+			print("Test results written to: " + path)
+			break
 
 func _press(action: String) -> void:
 	var e := InputEventAction.new(); e.action = action; e.pressed = true

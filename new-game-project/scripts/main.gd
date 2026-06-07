@@ -37,6 +37,10 @@ func _ready() -> void:
 		Game._reset_run()
 		_start_overworld()
 		_dungeon_test_routine()
+	elif OS.has_environment("TEMU_VERIFY_DUNGEON"):
+		Game._reset_run()
+		_start_overworld()
+		_verify_dungeon_ready()
 	elif OS.has_environment("TEMU_RESPAWN"):
 		Game._reset_run()
 		_start_overworld()
@@ -207,6 +211,56 @@ func _dungeon_test_routine() -> void:
 
 	results.append("✓ Returned to overworld, player at %s" % new_overworld_player.global_position)
 	results.append("=== DUNGEON TEST PASSED ===")
+	_write_test_results(results)
+	get_tree().quit()
+
+func _verify_dungeon_ready() -> void:
+	await get_tree().create_timer(1.0).timeout
+
+	var results := ["=== DUNGEON VERIFICATION ==="]
+
+	# Check overworld loaded
+	if _world and _world.get_script().get_path() == "res://scripts/overworld.gd":
+		results.append("✓ Overworld loaded")
+	else:
+		results.append("✗ Overworld not loaded")
+
+	# Check player in overworld
+	var ow_player = _world.player if _world else null
+	if ow_player:
+		results.append("✓ Player in overworld at %s" % ow_player.global_position)
+	else:
+		results.append("✗ No player in overworld")
+
+	# Check cave entrance exists
+	var cave_found = false
+	for n in get_tree().get_nodes_in_group("interactable"):
+		if n is Interactable and n.global_position.distance_to(Vector2(2800, 840)) < 50:
+			cave_found = true
+			results.append("✓ Cave entrance found at %s" % n.global_position)
+			break
+	if not cave_found:
+		results.append("✗ Cave entrance not found")
+
+	# Check all required assets exist
+	var assets_ok = true
+	for asset in ["res://assets/props/cave.png", "res://assets/audio/ambient_dungeon.mp3", "res://assets/props/word_wall.png"]:
+		if not ResourceLoader.exists(asset):
+			results.append("✗ Missing asset: %s" % asset)
+			assets_ok = false
+	if assets_ok:
+		results.append("✓ All dungeon assets present")
+
+	# Check draugr sprites exist
+	var draugr_ok = true
+	for anim in ["idle", "walk", "slash", "hurt", "spellcast", "thrust"]:
+		if not ResourceLoader.exists("res://assets/chars/draugr_%s.png" % anim):
+			results.append("✗ Missing draugr animation: %s" % anim)
+			draugr_ok = false
+	if draugr_ok:
+		results.append("✓ All draugr animations present")
+
+	results.append("=== READY TO TEST DUNGEON ===")
 	_write_test_results(results)
 	get_tree().quit()
 

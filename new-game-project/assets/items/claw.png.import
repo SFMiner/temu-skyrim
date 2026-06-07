@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bk381i38gb0xc"
-valid=false
+uid="uid://bngby1odh4f4t"
+path="res://.godot/imported/claw.png-f83cb0ce7d3adb7cd5ddc6043e58fbfc.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/items/claw.png"
+dest_files=["res://.godot/imported/claw.png-f83cb0ce7d3adb7cd5ddc6043e58fbfc.ctex"]
 
 [params]
 

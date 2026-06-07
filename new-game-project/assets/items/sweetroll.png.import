@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://jmxe1f376bp6"
-valid=false
+uid="uid://b6sbw7ihc3xa2"
+path="res://.godot/imported/sweetroll.png-b6c123f1e960d3023bbe708abfd616e1.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/items/sweetroll.png"
+dest_files=["res://.godot/imported/sweetroll.png-b6c123f1e960d3023bbe708abfd616e1.ctex"]
 
 [params]
 

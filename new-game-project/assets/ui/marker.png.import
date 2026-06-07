@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dvppyld5eaime"
-valid=false
+uid="uid://leiunljwik1c"
+path="res://.godot/imported/marker.png-fe5a95e0571998f2dc2901b253d88a4f.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/ui/marker.png"
+dest_files=["res://.godot/imported/marker.png-fe5a95e0571998f2dc2901b253d88a4f.ctex"]
 
 [params]
 

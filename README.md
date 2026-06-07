@@ -186,11 +186,30 @@ It's a real, playable game—not a tech demo. All systems work. All code is clea
 
 ## Credits & Attribution
 
-- **Engine**: Godot 4.6 (open source)
-- **Sprites**: Generated via [Universal LPC Spritesheet Generator](https://sanderfrenken.github.io/Universal-LPC-Spritesheet-Character-Generator/)
-- **Audio**: Synthesized with numpy; ambient audio sourced from freesound.org
-- **Concept**: Inspired by the "Temu version of X" meme
-- **Built by**: Claude Opus 4.8 (Anthropic)
+**Engine & Framework:**
+- [Godot 4.6](https://godotengine.org/) - Open source game engine (MIT License)
+
+**Art Assets:**
+- Character sprites generated using [Universal LPC Spritesheet Character Generator](https://sanderfrenken.github.io/Universal-LPC-Spritesheet-Character-Generator/) by Sander Frenken
+- Sprites composed from the [Liberated Pixel Cup](https://lpc.opengameart.org/) community artwork
+  - Built on work by many artists including: Lanea Zimmerman, Charles Sannyong Xie, Jordan Irwin, Sharm, and the LPC community
+  - Licensed under CC0, GPL 2.0, and GPL 3.0 (see individual asset licenses)
+- Procedural pixel art generation (tiles, props, effects) via custom Python scripts
+- Procedural UI assets
+
+**Audio:**
+- SFX synthesized with numpy
+- Ambient dungeon audio from freesound.org community
+- Music composed with procedural synthesis
+
+**Special Thanks:**
+- The [Liberated Pixel Cup](https://lpc.opengameart.org/) community for the extensive sprite library
+- OpenGameArt.org for community resources
+- The Godot community and documentation
+
+**Game Concept:**
+- Inspired by the "Temu version of X" internet meme
+- Built by Claude Opus 4.8 (Anthropic) as a demonstration of agentic game development capabilities
 
 ---
 

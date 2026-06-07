@@ -37,7 +37,7 @@ func _ready() -> void:
 # === GROUND & WALLS ===
 func _build_ground() -> void:
 	var gnd := Sprite2D.new()
-	gnd.texture = load("res://assets/env/tile_stonefloor.png")
+	gnd.texture = load("res://assets/env/tile_stone.png")
 	gnd.centered = false
 	gnd.region_enabled = true
 	gnd.region_rect = Rect2(0, 0, WORLD.x, WORLD.y)

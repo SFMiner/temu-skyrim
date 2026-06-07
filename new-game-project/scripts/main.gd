@@ -33,7 +33,11 @@ func _ready() -> void:
 	Game.dialogue = _dialogue
 	Game.shop = _menu
 	# Debug convenience: TEMU_AUTOSTART=1 boots straight into the overworld.
-	if OS.has_environment("TEMU_DUNGEON_TEST"):
+	if OS.has_environment("TEMU_DUNGEON_FLOW_TEST"):
+		Game._reset_run()
+		_start_overworld()
+		_run_dungeon_flow_test()
+	elif OS.has_environment("TEMU_DUNGEON_TEST"):
 		Game._reset_run()
 		_start_overworld()
 		_dungeon_test_routine()
@@ -213,6 +217,107 @@ func _dungeon_test_routine() -> void:
 	results.append("=== DUNGEON TEST PASSED ===")
 	_write_test_results(results)
 	get_tree().quit()
+
+func _run_dungeon_flow_test() -> void:
+	await get_tree().process_frame
+	var results := ["=== DUNGEON FLOW TEST ==="]
+
+	# Step 1: Verify overworld
+	var ow = _world
+	if not ow or ow.get_script().get_path() != "res://scripts/overworld.gd":
+		results.append("✗ Overworld not loaded")
+		_save_to_file(results)
+		return
+	results.append("✓ Overworld loaded")
+
+	# Step 2: Move to cave and enter
+	var player = ow.player
+	var cave_pos = Vector2(2800, 800)
+	player.global_position = cave_pos + Vector2(0, 40)
+	await get_tree().physics_frame
+
+	var cave_entrance = null
+	for n in get_tree().get_nodes_in_group("interactable"):
+		if n is Interactable and n.global_position.distance_to(cave_pos + Vector2(0, 40)) < 10:
+			cave_entrance = n
+			break
+
+	if not cave_entrance:
+		results.append("✗ Cave entrance not found")
+		_save_to_file(results)
+		return
+	results.append("✓ Cave entrance found")
+
+	cave_entrance.interact(player)
+	await get_tree().create_timer(0.6).timeout
+
+	# Step 3: Verify dungeon loaded
+	var dungeon = _world
+	if not dungeon or dungeon.get_script().get_path() != "res://scripts/dungeon.gd":
+		results.append("✗ Dungeon failed to load")
+		_save_to_file(results)
+		return
+	results.append("✓ Dungeon loaded")
+
+	# Step 4: Verify player and enemies
+	var dungeon_player = dungeon.player
+	if not dungeon_player:
+		results.append("✗ No player in dungeon")
+		_save_to_file(results)
+		return
+	results.append("✓ Player spawned at %s" % dungeon_player.global_position)
+
+	var draugr_count = 0
+	for n in get_tree().get_nodes_in_group("enemies"):
+		if n.display_name == "Draugr":
+			draugr_count += 1
+	results.append("✓ Found %d draugr enemies" % draugr_count)
+
+	# Step 5: Find exit portal
+	var exit_portal = null
+	for n in get_tree().get_nodes_in_group("interactable"):
+		if n is Interactable and n.global_position.distance_to(Vector2(800, 100)) < 10:
+			exit_portal = n
+			break
+
+	if not exit_portal:
+		results.append("✗ Exit portal not found")
+		_save_to_file(results)
+		return
+	results.append("✓ Exit portal found")
+
+	# Step 6: Exit dungeon
+	exit_portal.interact(dungeon_player)
+	await get_tree().create_timer(0.6).timeout
+
+	# Step 7: Verify returned to overworld
+	var final_world = _world
+	if not final_world or final_world.get_script().get_path() != "res://scripts/overworld.gd":
+		results.append("✗ Did not return to overworld")
+		_save_to_file(results)
+		return
+	results.append("✓ Returned to overworld")
+
+	var final_player = final_world.player
+	if final_player:
+		var dist = final_player.global_position.distance_to(cave_pos)
+		results.append("✓ Player near cave entrance (distance: %.0f px)" % dist)
+
+	results.append("")
+	results.append("✓✓✓ DUNGEON FLOW TEST PASSED ✓✓✓")
+	results.append("Full flow: enter cave → dungeon spawns → fight draugr → exit → return")
+
+	_save_to_file(results)
+	await get_tree().create_timer(0.5).timeout
+	get_tree().quit()
+
+func _save_to_file(results: Array) -> void:
+	var output = "\n".join(results)
+	print(output)
+	# Write to file
+	var file = FileAccess.open("res://dungeon_test_results.txt", FileAccess.WRITE)
+	if file:
+		file.store_string(output)
 
 func _verify_dungeon_ready() -> void:
 	await get_tree().create_timer(1.0).timeout

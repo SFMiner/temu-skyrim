@@ -33,6 +33,8 @@ func _ready() -> void:
 	rotation = velocity.angle()
 
 func _physics_process(delta: float) -> void:
+	if Game.ui_open:  # projectiles freeze (don't move or hit) while paused/in dialogue
+		return
 	global_position += velocity * delta
 	life -= delta
 	if life <= 0.0:

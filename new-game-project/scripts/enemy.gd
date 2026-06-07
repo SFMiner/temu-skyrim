@@ -51,6 +51,10 @@ func _physics_process(delta: float) -> void:
 	_tint()
 	if state == State.DEAD:
 		return
+	# Freeze while a menu/dialogue/pause blocks gameplay (same gate the player uses).
+	if Game.ui_open:
+		velocity = Vector2.ZERO
+		return
 	_knockback = _knockback.move_toward(Vector2.ZERO, 700 * delta)
 	if _player == null or not is_instance_valid(_player):
 		var ps := get_tree().get_nodes_in_group("player")
@@ -90,7 +94,7 @@ func _begin_attack() -> void:
 	get_tree().create_timer(0.35).timeout.connect(_land_attack)
 
 func _land_attack() -> void:
-	if state == State.DEAD:
+	if state == State.DEAD or Game.ui_open:
 		return
 	if _player and is_instance_valid(_player) and _player.has_method("take_damage"):
 		var to: Vector2 = _player.global_position - global_position

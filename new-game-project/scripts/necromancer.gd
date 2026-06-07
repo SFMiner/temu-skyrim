@@ -23,7 +23,7 @@ func _build_visual() -> void:
 
 func _physics_process(delta: float) -> void:
 	super._physics_process(delta)
-	if state == State.DEAD:
+	if state == State.DEAD or Game.ui_open:
 		return
 	_cast_t -= delta
 	if _cast_t <= 0.0 and _player and is_instance_valid(_player):

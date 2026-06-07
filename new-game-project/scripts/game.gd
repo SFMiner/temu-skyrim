@@ -32,7 +32,7 @@ var equipped_weapon: String = "iron_sword"
 
 # === QUESTS / FLAGS ===
 # stage values: 0=unknown, 1=active, 2=ready-to-turn-in, 3=complete
-var quests: Dictionary = {"main": 0, "sweetroll": 0, "freetrial": 0, "golden_claw": 0, "break_of_dawn": 0}
+var quests: Dictionary = {"main": 0, "sweetroll": 0, "freetrial": 0, "golden_claw": 0, "break_of_dawn": 0, "night": 0}
 var flags: Dictionary = {}
 var dragons_slain: int = 0
 
@@ -73,6 +73,8 @@ const ITEMS := {
 		"icon": "star", "rating": 1.0, "desc": "Non-returnable. Final sale. Glows ominously. App not available in your region."},
 	"dawnbreaker": {"name": "DawnBreaker™ (Now With RGB)", "type": "weapon", "dmg": 30, "value": 600,
 		"icon": "sword", "rating": 5.0, "desc": "Explodes the undead in a burst of light. Batteries not included."},
+	"okayest_drinker": {"name": "'World's Okayest Drinker' Trophy", "type": "misc", "value": 1,
+		"icon": "star", "rating": 4.9, "desc": "Certificate of Participation. Laminated. Faintly sticky. Smells of regret."},
 }
 
 func _ready() -> void:
@@ -87,7 +89,7 @@ func _reset_run() -> void:
 	known_shout = false
 	inventory = []
 	equipped_weapon = "iron_sword"
-	quests = {"main": 0, "sweetroll": 0, "freetrial": 0, "golden_claw": 0, "break_of_dawn": 0}
+	quests = {"main": 0, "sweetroll": 0, "freetrial": 0, "golden_claw": 0, "break_of_dawn": 0, "night": 0}
 	flags = {}
 	dragons_slain = 0
 	add_item("iron_sword", 1)
@@ -225,6 +227,24 @@ func meridia_victory() -> void:
 		"Take [color=#ffe08a]DawnBreaker™[/color] — now with RGB — and my five-star blessing.",
 		"And lo, the Beacon leaves your bag at last. You are FREE. ...until the next free gift.",
 	])
+
+# === A NIGHT TO REMEMBER ===
+# The four drunken antics the player must clean up. All true == ready to face Sam.
+const NIGHT_DEEDS := ["night_sweetrolls", "night_reviews", "night_duel", "night_troll"]
+
+func night_done() -> bool:
+	for f in NIGHT_DEEDS:
+		if not flags.get(f, false):
+			return false
+	return true
+
+# Called whenever an antic is resolved: refresh the tracker checklist, and once
+# all four deeds are done, advance the quest to "return to Sam".
+func night_check_progress() -> void:
+	quest_updated.emit("night")  # redraw the ✓/○ checklist after each antic
+	if quests.get("night", 0) == 1 and night_done():
+		set_quest("night", 2)
+		notify.emit("Your night is accounted for. Return to Sam by the campfire.", Color(0.9, 0.85, 1.0))
 
 # === SAVE / LOAD ===
 const SAVE_PATH := "user://temu_save.json"

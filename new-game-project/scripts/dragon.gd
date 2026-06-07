@@ -52,6 +52,8 @@ func _physics_process(delta: float) -> void:
 
 	if state == State.DEAD:
 		return
+	if Game.ui_open:  # freeze attacks/movement while paused or in dialogue
+		return
 	if _player == null or not is_instance_valid(_player):
 		var ps := get_tree().get_nodes_in_group("player")
 		_player = ps[0] if ps.size() > 0 else null

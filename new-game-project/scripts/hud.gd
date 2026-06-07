@@ -213,6 +213,19 @@ func _refresh_quests() -> void:
 		lines += "• The Break of Dawn™: cleanse the temple — destroy Malkoran\n"
 	elif q.get("break_of_dawn", 0) == 3:
 		lines += "• [color=#88dd88]The Break of Dawn™ — COMPLETE[/color]\n"
+	if q.get("night", 0) == 1:
+		lines += "• A Night to Remember: piece together last night —\n"
+		var deeds := {"night_sweetrolls": "settle the sweetroll order (Belethor)",
+			"night_reviews": "post a public apology (in town)",
+			"night_duel": "honor the dawn duel (east road)",
+			"night_troll": "annul the frost-troll marriage (north)"}
+		for f in Game.NIGHT_DEEDS:
+			var mark := "[color=#88dd88]✓[/color]" if Game.flags.get(f, false) else "○"
+			lines += "    %s %s\n" % [mark, deeds[f]]
+	elif q.get("night", 0) == 2:
+		lines += "• A Night to Remember: return to Sam by the campfire\n"
+	elif q.get("night", 0) == 3:
+		lines += "• [color=#88dd88]A Night to Remember — COMPLETE[/color]\n"
 	if q.get("freetrial", 0) == 1:
 		lines += "• Free Trial: bring the merchant 3 wolf pelts\n"
 	if lines.strip_edges().ends_with("Quests[/b]"):
@@ -255,4 +268,20 @@ func flash(color: Color = Color(1, 0.92, 0.6)) -> void:
 	var tw := rect.create_tween()
 	tw.tween_property(rect, "modulate:a", 0.55, 0.08)
 	tw.tween_property(rect, "modulate:a", 0.0, 0.5)
+	tw.tween_callback(rect.queue_free)
+
+# Blackout: fade fully to black, run `mid` at peak (for teleports / scene setup),
+# hold, then fade back in. Used by the "A Night to Remember" drinking blackout.
+func fade_black(mid: Callable = Callable(), hold: float = 0.7) -> void:
+	var rect := ColorRect.new()
+	rect.color = Color(0, 0, 0)
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.modulate.a = 0.0
+	add_child(rect)
+	var tw := create_tween()
+	tw.tween_property(rect, "modulate:a", 1.0, 0.6)
+	tw.tween_callback(func(): if mid.is_valid(): mid.call())
+	tw.tween_interval(hold)
+	tw.tween_property(rect, "modulate:a", 0.0, 0.8)
 	tw.tween_callback(rect.queue_free)

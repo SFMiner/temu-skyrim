@@ -36,6 +36,8 @@ func _ready() -> void:
 	_build_cave_entrance()
 	_build_shrine()
 	_spawn_beacon_bandit()
+	_build_apology_board()
+	_spawn_night_foes()
 	_build_borders()
 	_spawn_player()
 	Audio.play_music("music_overworld")
@@ -137,6 +139,7 @@ func _build_town() -> void:
 	_spawn_npc("ysolda", "Ysolda", TOWN + Vector2(260, 130), _talk_villager, true)
 	_spawn_npc("mage", "Farengar Secret-Fire", KEEP_POS + Vector2(-80, 160), _talk_farengar, false)
 	_spawn_npc("camilla", "Camilla", TOWN + Vector2(150, 160), _talk_camilla, true)
+	_spawn_npc("sam", "Sam", TOWN + Vector2(-10, -10), _talk_sam, false)
 
 func _spawn_npc(char_name: String, npc_name: String, pos: Vector2, cb: Callable, wander: bool) -> void:
 	var n := Npc.new()
@@ -327,6 +330,96 @@ func _enter_temple() -> void:
 	if main and main.has_method("_load_temple"):
 		main._load_temple(SHRINE + Vector2(0, 60))
 
+# === A NIGHT TO REMEMBER: Sam, the blackout, and the cleanup ===
+# Steve (dawn duel) on the east road; Sweetie (frost-troll spouse) up north.
+# Spawned once the quest is active; flag-gated so the dead stay dead.
+func _spawn_night_foes() -> void:
+	if Game.quests.get("night", 0) < 1:
+		return
+	if not Game.flags.get("night_duel", false):
+		var steve := Steve.new()
+		steve.position = Vector2(2100, 1360)
+		add_child(steve)
+	if not Game.flags.get("night_troll", false):
+		var sweetie := Sweetie.new()
+		sweetie.position = Vector2(1080, 620)
+		add_child(sweetie)
+
+# The town notice board: post your court-ordered public apology here.
+func _build_apology_board() -> void:
+	var board := Interactable.new()
+	board.position = TOWN + Vector2(70, 205)
+	board.add_to_group("interactable")
+	board.on_interact = func(_p): _post_apology()
+	var spr := Sprite2D.new()
+	spr.texture = load("res://assets/props/sign.png")
+	spr.centered = true
+	spr.offset = Vector2(0, -16)
+	board.add_child(spr)
+	var col := Area2D.new()
+	var shape := CircleShape2D.new()
+	shape.radius = 32.0
+	var col_shape := CollisionShape2D.new()
+	col_shape.shape = shape
+	col.add_child(col_shape)
+	board.add_child(col)
+	add_child(board)
+
+func _post_apology() -> void:
+	if Game.quests.get("night", 0) != 1 or Game.flags.get("night_reviews", false):
+		Game.dialogue.start("Town Notice Board", ["A board of grievances — most of them 1-star reviews about you."])
+		return
+	Game.flags["night_reviews"] = true
+	Game.notify.emit("Public apology posted. (It is, itself, faintly passive-aggressive.)", Color(0.8, 1, 0.8))
+	Game.night_check_progress()
+
+func _talk_sam(_npc) -> void:
+	var stage: int = Game.quests.get("night", 0)
+	if stage == 0:
+		Game.dialogue.start("Sam", [
+			"Well met! Sam's the name. You look like someone who can hold their mead.",
+			"Care for a friendly drinking contest? First to forget their own name buys the next round.",
+		], [
+			{"text": "You're on. (Accept)", "action": func(): _accept_night_contest()},
+			{"text": "I'd better not.", "action": Callable()},
+		])
+	elif stage == 1:
+		Game.dialogue.start("Sam", ["Rough morning? HA! Go on, tidy up your little mess. I'll wait here. I'm enjoying this immensely."])
+	elif stage == 2:
+		Game.set_quest("night", 3)
+		Game.add_item("okayest_drinker", 1)
+		Game.add_gold(300)
+		Game.add_xp(250)
+		if Game.hud and Game.hud.has_method("flash"):
+			Game.hud.flash(Color(0.7, 0.2, 0.4))
+		Game.dialogue.start("SANGUINE™ — Prince of Two-for-One Tuesdays", [
+			"You cleaned it ALL up. The troll, the duel, the reviews, the sweetrolls. MAGNIFICENT.",
+			"Sam was never real, friend. I am SANGUINE™ — Prince of Two-for-One Tuesdays.",
+			"Best night I've had in an age. Take this trophy, 300 gold, and my eternal subscription. First month free.",
+		])
+	else:
+		Game.dialogue.start("Sam", ["Same time next Tuesday? Two-for-one, you know. Bring the goat."])
+
+func _accept_night_contest() -> void:
+	Game.set_quest("night", 1)
+	Game.notify.emit("Sam raises a tankard. 'To poor decisions!'", Color(1, 0.85, 0.4))
+	if Game.hud and Game.hud.has_method("fade_black"):
+		Game.hud.fade_black(_wake_at_camp)
+	else:
+		_wake_at_camp()
+
+# Runs at peak-black: teleport to the bandit camp and play the wake-up.
+func _wake_at_camp() -> void:
+	if player and is_instance_valid(player):
+		player.global_position = CAMP + Vector2(-200, 150)
+	_spawn_night_foes()
+	Game.notify.emit("You wake at the bandit camp in a paper crown. Ask around town.", Color(0.9, 0.9, 1.0))
+	Game.dialogue.start("Confused Bandit", [
+		"Oi! CHIEF! You're awake! ...You don't remember a thing, do you.",
+		"Last night you out-drank the whole camp, crowned yourself Honorary Chief, and signed... a LOT of things.",
+		"Town's in an uproar. Best go sort out whatever you did. Your Highness.",
+	])
+
 # === BORDERS ===
 func _build_borders() -> void:
 	var t := 60.0
@@ -439,6 +532,12 @@ func _accept_main() -> void:
 	Game.notify.emit("Quest started: DraGON™ Returns. Head north!", Color(1, 0.85, 0.4))
 
 func _talk_guard(_npc) -> void:
+	if Game.quests.get("night", 0) == 1 and not Game.flags.get("night_duel", false):
+		Game.dialogue.start("Beigeton Guard", [
+			"There he is — the man, the legend, the menace. Last night you challenged a fellow named Steve to a duel at dawn.",
+			"Signed AND witnessed. He's pacing the east road, working up his nerve. Honor it, or you're a coward and a vandal.",
+		])
+		return
 	var sr: int = Game.quests.get("sweetroll", 0)
 	if sr == 0:
 		Game.dialogue.start("Beigeton Guard", [
@@ -477,6 +576,16 @@ func _talk_shopkeep(_npc) -> void:
 			"The glowing one. The Beacon. No. I've seen what happens to resellers. It's non-returnable for a REASON.",
 		], [{"text": "Let me shop anyway", "action": func(): _open_shop()}, {"text": "Leave", "action": Callable()}])
 		return
+	# A Night to Remember — the 200-sweetroll store-credit bender.
+	if Game.quests.get("night", 0) == 1 and not Game.flags.get("night_sweetrolls", false):
+		Game.dialogue.start("Belethor", [
+			"AH. The big spender returns. Last night you one-click-ordered TWO HUNDRED sweetrolls. On store credit.",
+			"You hugged each one. That's 100 gold, friend. Pay up, or I start a podcast about you.",
+		], [
+			{"text": "Pay 100 G", "action": func(): _pay_sweetroll_debt()},
+			{"text": "Two HUNDRED?!", "action": func(): Game.dialogue.start("Belethor", ["Two. Hundred. There's security footage. Pay the 100 gold."], [{"text": "Pay 100 G", "action": func(): _pay_sweetroll_debt()}, {"text": "Later", "action": Callable()}])},
+		])
+		return
 	if not Game.flags.get("free_sample", false):
 		Game.flags["free_sample"] = true
 		Game.add_item("health_potion", 1)
@@ -491,7 +600,23 @@ func _open_shop() -> void:
 	if Game.shop:
 		Game.shop.open_shop(["iron_sword", "steel_sword", "health_potion", "magicka_potion", "stamina_potion", "sweetroll", "iron_helmet"])
 
+func _pay_sweetroll_debt() -> void:
+	if Game.spend_gold(100):
+		Game.flags["night_sweetrolls"] = true
+		Game.notify.emit("Debt cleared. Belethor keeps the sweetrolls 'for inventory.'", Color(0.8, 1, 0.8))
+		Game.night_check_progress()
+	else:
+		Game.dialogue.start("Belethor", ["Not enough gold? Tragic. Come back when you're solvent, Chief."])
+
 func _talk_villager(npc) -> void:
+	# A Night to Remember — Ysolda recounts the frost-troll wedding.
+	if Game.quests.get("night", 0) == 1 and npc.npc_name == "Ysolda" and not Game.flags.get("night_troll", false):
+		Game.dialogue.start("Ysolda", [
+			"You don't remember? Oh, this is RICH. You got married last night.",
+			"To a frost troll. Named Sweetie. There were vows. A goat officiated.",
+			"She's up north, expecting you home for dinner. You'll want to... annul that. Carefully.",
+		])
+		return
 	var lines := [
 		["Have you been to the Cloud District? ...That's the keep. We only have the one district."],
 		["Everything's cheaper in Beigeton. Quality not guaranteed."],
@@ -538,6 +663,14 @@ func _complete_golden_claw() -> void:
 	Game.notify.emit("Quest complete: The Golden Claw (+200 G)", Color(0.8, 1, 0.8))
 
 func _talk_camilla(npc) -> void:
+	# A Night to Remember — Camilla recounts the 1-star review rampage.
+	if Game.quests.get("night", 0) == 1 and not Game.flags.get("night_reviews", false):
+		Game.dialogue.start("Camilla", [
+			"YOU. You left ONE-STAR reviews on every stall, shrine, and goat in town last night.",
+			"'Belethor smells of ham. 0/10.' 'This well is wet. Would not drink again.' We held an emergency town meeting.",
+			"Post a public apology on the notice board by the square. Today.",
+		])
+		return
 	if Game.quests.get("golden_claw", 0) == 0:
 		Game.dialogue.start(npc.npc_name, [
 			"My brother and I run the trading post. Well, we DID, until the claw got 'borrowed'.",

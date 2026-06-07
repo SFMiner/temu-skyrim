@@ -63,7 +63,7 @@ func _build_walls() -> void:
 
 func _wall(pos: Vector2) -> void:
 	var w := Sprite2D.new()
-	w.texture = load("res://assets/env/dungeon_wall.png")
+	w.texture = load("res://assets/env/tile_dwall.png")
 	w.centered = true
 	w.position = pos
 	w.z_index = -90

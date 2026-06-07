@@ -34,6 +34,8 @@ func _ready() -> void:
 	_build_bandit_camp()
 	_build_lair_decor()
 	_build_cave_entrance()
+	_build_shrine()
+	_spawn_beacon_bandit()
 	_build_borders()
 	_spawn_player()
 	Audio.play_music("music_overworld")
@@ -252,6 +254,79 @@ func _enter_dungeon() -> void:
 		if main and main.has_method("_load_dungeon"):
 			main._load_dungeon(exit_pos)
 
+# === BREAK OF DAWN: beacon bandit + Shrine of Meridia™ ===
+const SHRINE := Vector2(700, 760)
+
+# The doomed Beacon-bearer — spawned once, gated so only one Beacon exists.
+func _spawn_beacon_bandit() -> void:
+	if Game.flags.get("beacon_taken", false):
+		return
+	var b := BeaconBandit.new()
+	b.position = Vector2(1180, 1760)  # on the town cross street, hard to miss
+	add_child(b)
+
+# A radiant altar: golden light beam + a glowing pedestal you interact with.
+func _build_shrine() -> void:
+	_prop("boulder", SHRINE)
+	var beam := Sprite2D.new()
+	beam.texture = load("res://assets/fx/glow.png")
+	beam.centered = true
+	beam.position = SHRINE + Vector2(0, -20)
+	beam.scale = Vector2(1.0, 5.0)
+	beam.z_index = 8
+	beam.modulate = Color(1.0, 0.9, 0.55, 0.5)
+	add_child(beam)
+	var orb := Sprite2D.new()
+	orb.texture = load("res://assets/fx/glow.png")
+	orb.centered = true
+	orb.position = SHRINE + Vector2(0, -34)
+	orb.z_index = 9
+	orb.modulate = Color(1.0, 0.95, 0.7, 0.85)
+	add_child(orb)
+	var shrine := Interactable.new()
+	shrine.position = SHRINE
+	shrine.add_to_group("interactable")
+	shrine.on_interact = func(_p): _touch_shrine()
+	var col := Area2D.new()
+	var shape := CircleShape2D.new()
+	shape.radius = 40.0
+	var col_shape := CollisionShape2D.new()
+	col_shape.shape = shape
+	col.add_child(col_shape)
+	shrine.add_child(col)
+	add_child(shrine)
+
+func _touch_shrine() -> void:
+	var stage: int = Game.quests.get("break_of_dawn", 0)
+	if stage >= 2:
+		# already cleansing — re-enter the temple if Malkoran still lives
+		if Game.flags.get("malkoran_slain", false):
+			Game.meridia_say(["My temple is cleansed. Five stars. Now stop touching things."])
+		else:
+			_enter_temple()
+	elif stage == 1 and Game.count_of("meridia_beacon") > 0:
+		# THE PLACEMENT — grandiose beam-of-light cutscene, then into the temple
+		Game.set_quest("break_of_dawn", 2)
+		Game.beacon_boom("THE BEACON IS PLACED. BEHOLD MY RADIANCE!")
+		Game.meridia_say([
+			"YES. The Beacon sings! My light floods the altar (LED, 6500K, daylight white).",
+			"Now I lift you into my temple — express delivery, no signature required.",
+			"CLEANSE it. Destroy Malkoran. Do not, under any circumstances, request a refund.",
+		])
+		await get_tree().create_timer(1.2).timeout
+		_enter_temple()
+	elif stage == 0:
+		Game.dialogue.start("Shrine of Meridia™", ["A radiant altar hums. A QR code flickers: 'Scan to begin your journey.' You have no phone."])
+	else:
+		Game.meridia_say(["Bring me my Beacon, mortal. You'll know it — it won't stop glowing."])
+
+func _enter_temple() -> void:
+	Game.notify.emit("A beam of light engulfs you...", Color(1.0, 0.92, 0.6))
+	await get_tree().create_timer(0.3).timeout
+	var main = get_parent()
+	if main and main.has_method("_load_temple"):
+		main._load_temple(SHRINE + Vector2(0, 60))
+
 # === BORDERS ===
 func _build_borders() -> void:
 	var t := 60.0
@@ -394,6 +469,14 @@ func _complete_sweetroll() -> void:
 	Game.notify.emit("Quest complete: The Sweetroll Heist (+60 G)", Color(0.8, 1, 0.8))
 
 func _talk_shopkeep(_npc) -> void:
+	# Belethor will buy anything — except the cursed Beacon.
+	if Game.count_of("meridia_beacon") > 0 and not Game.flags.get("belethor_beacon", false):
+		Game.flags["belethor_beacon"] = true
+		Game.dialogue.start("Belethor", [
+			"Everything's for sale, my friend! Everything! ...except THAT.",
+			"The glowing one. The Beacon. No. I've seen what happens to resellers. It's non-returnable for a REASON.",
+		], [{"text": "Let me shop anyway", "action": func(): _open_shop()}, {"text": "Leave", "action": Callable()}])
+		return
 	if not Game.flags.get("free_sample", false):
 		Game.flags["free_sample"] = true
 		Game.add_item("health_potion", 1)

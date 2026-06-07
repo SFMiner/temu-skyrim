@@ -580,6 +580,15 @@ func _load_dungeon(exit_pos: Vector2) -> void:
 	_world.set_meta("overworld_exit_pos", exit_pos)
 	Game.ui_open = false
 
+func _load_temple(exit_pos: Vector2) -> void:
+	if _world and is_instance_valid(_world):
+		_world.queue_free()
+	_world = Node2D.new()
+	_world.set_script(load("res://scripts/temple.gd"))
+	add_child(_world)
+	_world.set_meta("overworld_exit_pos", exit_pos)
+	Game.ui_open = false
+
 func _load_overworld_from_dungeon() -> void:
 	_start_overworld()
 

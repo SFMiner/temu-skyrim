@@ -193,9 +193,13 @@ func _add_row(id: String, count: int, kind: String) -> void:
 			btn.disabled = Game.gold < val
 			btn.pressed.connect(func(): _buy(id, val))
 		"sell":
-			var sp: int = maxi(1, val / 2)
-			btn.text = "Sell %d G" % sp
-			btn.pressed.connect(func(): _sell(id, sp))
+			if Game.item_def(id).get("no_sell", false):
+				btn.text = "CURSED — No Returns"
+				btn.pressed.connect(func(): Game.beacon_boom())
+			else:
+				var sp: int = maxi(1, val / 2)
+				btn.text = "Sell %d G" % sp
+				btn.pressed.connect(func(): _sell(id, sp))
 	h.add_child(btn)
 
 func _equip(id: String) -> void:

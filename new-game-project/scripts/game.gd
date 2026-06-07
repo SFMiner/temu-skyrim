@@ -32,7 +32,7 @@ var equipped_weapon: String = "iron_sword"
 
 # === QUESTS / FLAGS ===
 # stage values: 0=unknown, 1=active, 2=ready-to-turn-in, 3=complete
-var quests: Dictionary = {"main": 0, "sweetroll": 0, "freetrial": 0, "golden_claw": 0}
+var quests: Dictionary = {"main": 0, "sweetroll": 0, "freetrial": 0, "golden_claw": 0, "break_of_dawn": 0}
 var flags: Dictionary = {}
 var dragons_slain: int = 0
 
@@ -69,6 +69,10 @@ const ITEMS := {
 		"icon": "book", "rating": 2.2, "desc": "Translated by AI. The Thu'um may sound slightly off."},
 	"iron_helmet": {"name": "Iron Helmet (One Size)", "type": "misc", "value": 35,
 		"icon": "helm", "rating": 3.7, "desc": "One size fits none. May reduce peripheral vision to zero."},
+	"meridia_beacon": {"name": "The Beacon™ (Smart LED)", "type": "misc", "value": 0, "no_sell": true,
+		"icon": "star", "rating": 1.0, "desc": "Non-returnable. Final sale. Glows ominously. App not available in your region."},
+	"dawnbreaker": {"name": "DawnBreaker™ (Now With RGB)", "type": "weapon", "dmg": 30, "value": 600,
+		"icon": "sword", "rating": 5.0, "desc": "Explodes the undead in a burst of light. Batteries not included."},
 }
 
 func _ready() -> void:
@@ -83,7 +87,7 @@ func _reset_run() -> void:
 	known_shout = false
 	inventory = []
 	equipped_weapon = "iron_sword"
-	quests = {"main": 0, "sweetroll": 0, "freetrial": 0, "golden_claw": 0}
+	quests = {"main": 0, "sweetroll": 0, "freetrial": 0, "golden_claw": 0, "break_of_dawn": 0}
 	flags = {}
 	dragons_slain = 0
 	add_item("iron_sword", 1)
@@ -174,6 +178,53 @@ func unlock_shout() -> void:
 func set_quest(id: String, stage: int) -> void:
 	quests[id] = stage
 	quest_updated.emit(id)
+
+# === MERIDIA™ / THE BREAK OF DAWN ===
+# Reusable grandiose presentation for the Beacon quest, shared by overworld,
+# the shop, and the temple. Voice lines via the dialogue UI (gold bbcode);
+# the dreaded interjection via a screen-flash toast + camera shake.
+const MERIDIA := "MERIDIA™ — Lady of Infinite Markups"
+
+func meridia_say(lines: Array) -> void:
+	if dialogue:
+		dialogue.start(MERIDIA, lines)
+
+# The dreaded "ANOTHER HAND TOUCHES THE BEACON!" sting.
+func beacon_boom(text: String = "ANOTHER HAND TOUCHES THE BEACON!") -> void:
+	notify.emit(text, Color(1.0, 0.86, 0.3))
+	Audio.sfx("shout", 2.0, 0.05)
+	if hud and hud.has_method("flash"):
+		hud.flash(Color(1.0, 0.92, 0.6))
+	if world and "player" in world and is_instance_valid(world.player):
+		world.player._shake(6.0)
+
+# Looted from the Beacon-Cursed Bandit: curse the player with the Beacon and
+# open the quest with Meridia's booming command.
+func beacon_acquired() -> void:
+	if flags.get("beacon_taken", false):
+		return
+	flags["beacon_taken"] = true
+	add_item("meridia_beacon", 1)
+	set_quest("break_of_dawn", 1)
+	beacon_boom()
+	meridia_say([
+		"[color=#ffe08a]MORTAL.[/color] Another hand touches my Beacon. YOURS, now. No refunds.",
+		"I am MERIDIA™ — Lady of Infinite Markups, radiance with a 30-day warranty.",
+		"A petty necromancer, [i]Malkoran[/i], drop-ships the dead from MY temple. Unacceptable. Unlicensed.",
+		"Bear my Beacon to my shrine and CLEANSE it. The Beacon does not leave your bag until you do. Terms apply.",
+	])
+
+# Malkoran defeated: relief at last — the Beacon departs and DawnBreaker™ is yours.
+func meridia_victory() -> void:
+	remove_item("meridia_beacon", 1)
+	add_item("dawnbreaker", 1)
+	set_quest("break_of_dawn", 3)
+	beacon_boom("THE TEMPLE IS CLEANSED. PLEASE RATE YOUR EXPERIENCE.")
+	meridia_say([
+		"It is done. Malkoran is returned to sender.",
+		"Take [color=#ffe08a]DawnBreaker™[/color] — now with RGB — and my five-star blessing.",
+		"And lo, the Beacon leaves your bag at last. You are FREE. ...until the next free gift.",
+	])
 
 # === SAVE / LOAD ===
 const SAVE_PATH := "user://temu_save.json"

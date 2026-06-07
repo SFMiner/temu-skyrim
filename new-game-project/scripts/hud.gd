@@ -207,6 +207,12 @@ func _refresh_quests() -> void:
 			lines += "• The Golden Claw: recover it from the south barrow\n"
 	elif q.get("golden_claw", 0) == 3:
 		lines += "• [color=#88dd88]The Golden Claw — COMPLETE[/color]\n"
+	if q.get("break_of_dawn", 0) == 1:
+		lines += "• The Break of Dawn™: bear The Beacon to the Shrine of Meridia™\n"
+	elif q.get("break_of_dawn", 0) == 2:
+		lines += "• The Break of Dawn™: cleanse the temple — destroy Malkoran\n"
+	elif q.get("break_of_dawn", 0) == 3:
+		lines += "• [color=#88dd88]The Break of Dawn™ — COMPLETE[/color]\n"
 	if q.get("freetrial", 0) == 1:
 		lines += "• Free Trial: bring the merchant 3 wolf pelts\n"
 	if lines.strip_edges().ends_with("Quests[/b]"):
@@ -236,3 +242,17 @@ func _toast(text: String, color: Color) -> void:
 	tw.tween_interval(2.6)
 	tw.tween_property(l, "modulate:a", 0.0, 0.8)
 	tw.tween_callback(l.queue_free)
+
+# Full-screen color flash for divine moments (Meridia's Beacon). A ColorRect
+# that snaps to `color` then fades out — overlays everything but the menus.
+func flash(color: Color = Color(1, 0.92, 0.6)) -> void:
+	var rect := ColorRect.new()
+	rect.color = color
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.modulate.a = 0.0
+	add_child(rect)
+	var tw := rect.create_tween()
+	tw.tween_property(rect, "modulate:a", 0.55, 0.08)
+	tw.tween_property(rect, "modulate:a", 0.0, 0.5)
+	tw.tween_callback(rect.queue_free)
